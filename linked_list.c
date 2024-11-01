@@ -241,7 +241,7 @@ LIST_ERROR_TYPE list_add_last(int a_nodeValue)
 
 LIST_ERROR_TYPE list_add_before(unsigned int a_location, int a_nodeValue)
 {
-  	if(NULL == g_HEAD)
+  if(NULL == g_HEAD)
 	{
 		LIST_LOG("there is no linked list \n");
 		return LIST_ERROR_TYPE_NO_LIST_ERROR;
@@ -250,7 +250,12 @@ LIST_ERROR_TYPE list_add_before(unsigned int a_location, int a_nodeValue)
   struct node* l_tempNode = g_HEAD;
 	for(l_index = 1; l_index < a_location - 1; l_index++)
 	{
-		l_tempNode = l_tempNode->next;
+    l_tempNode = l_tempNode->next;
+    if(NULL == l_tempNode)// check for the existence of location
+    {
+      LIST_LOG("there is no linked list \n");
+      return LIST_ERROR_TYPE_NO_LIST_ERROR;
+    }
 	}
   struct node* l_newNode = NULL;
 	l_newNode = (struct node*)malloc(sizeof(struct node));
@@ -260,10 +265,18 @@ LIST_ERROR_TYPE list_add_before(unsigned int a_location, int a_nodeValue)
     return LIST_ERROR_TYPE_MEMORY_ERROR;
   }
   l_newNode->value = a_nodeValue;
+  if(l_tempNode == g_HEAD)// specific case for placing at the start
+  {
+    l_newNode->next = g_HEAD;
+    g_HEAD = l_newNode;
+  }
+  else
+  {
+    l_newNode->next = l_tempNode->next;
+    l_tempNode->next = l_newNode;
+  }
   LIST_LOG("Node value is %d\n", a_nodeValue);
-  LIST_LOG("position is %d\n", a_location + 1);
-  l_newNode->next = l_tempNode->next;
-  l_tempNode->next = l_newNode;
+  LIST_LOG("position is %d\n", a_location);
   
   return LIST_ERROR_TYPE_NO_ERROR;
 }
@@ -339,7 +352,8 @@ LIST_ERROR_TYPE list_remove_last()
   free(l_currNode);
 
   return LIST_ERROR_TYPE_NO_ERROR;
-}	
+}
+
 
 LIST_ERROR_TYPE list_remove(unsigned int a_location)
 {
@@ -348,26 +362,28 @@ LIST_ERROR_TYPE list_remove(unsigned int a_location)
 	  LIST_LOG("There is no linked list \n");
 	  return LIST_ERROR_TYPE_NO_LIST_ERROR;
 	}
-
-  struct node* l_currNode = g_HEAD;
   struct node* l_prevNode = g_HEAD;
+  struct node* l_currNode = g_HEAD;
   unsigned int l_index;
   for(l_index = 1; l_index < a_location; l_index++)
   {
+    l_prevNode = l_currNode;
+    l_currNode = l_currNode->next;
     if(NULL == l_currNode)
     {
       LIST_LOG("Location does not exist \n");
       return LIST_ERROR_TYPE_NODE_NOT_FOUND;
     }
-    l_prevNode = l_currNode;
-    l_currNode = l_currNode->next;
   }
-  LIST_LOG("%d value is deleted with the node \n", l_currNode->value);
-  if(l_prevNode == g_HEAD)
+
+  if(NULL == g_HEAD->next)
     g_HEAD = NULL;
+  else if(l_currNode == g_HEAD)
+    g_HEAD = g_HEAD->next;
   else
     l_prevNode->next = l_currNode->next;
 
+  LIST_LOG("%d is deleted \n", l_currNode->value);
   free(l_currNode);
 
   return LIST_ERROR_TYPE_NO_ERROR;
